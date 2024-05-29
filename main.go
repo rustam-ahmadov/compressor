@@ -1,7 +1,8 @@
 package main
 
-import "fmt"
+import "compressor/cmd"
 
 func main() {
-	fmt.Println("Hello from compressor")
+	// compressor pack vlc <path to file> -out /path/to/packed-file
+	cmd.Execute()
 }
