@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"github.com/spf13/cobra"
@@ -31,14 +32,29 @@ func pack(_ *cobra.Command, args []string) {
 	if err != nil {
 		handleErr(err)
 	}
+	defer r.Close()
 
-	data, err := io.ReadAll(r)
-	if err != nil {
-		handleErr(err)
+	reader := bufio.NewReader(r)
+	buffer := make([]byte, 1024) //1 kb buffer
+	for {
+		n, err := reader.Read(buffer)
+		if err != nil && err != io.EOF {
+			handleErr(err)
+		}
+		if n == 0 {
+			break
+		}
+
+		//buffer[:n]
 	}
 
+	//data, err := io.ReadAll(r)
+	//if err != nil {
+	//	handleErr(err)
+	//}
+
 	//packed := Encode(data)
-	packed := "" + string(data) //TODO: remove
+	packed := "" + string(buffer) //TODO: remove
 	fmt.Println(packed)
 
 	err = os.WriteFile(packedFileName(filePath), []byte(packed), 0644)
