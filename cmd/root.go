@@ -11,11 +11,13 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
-
+	if err := rootCmd.Execute(); err != nil {
+		handleErr(err)
+	}
 }
 
 func handleErr(err error) {
-	if err := rootCmd.Execute(); err != nil {
+	if err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, err)
 	}
 	os.Exit(1)
