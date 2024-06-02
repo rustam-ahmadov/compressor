@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"bufio"
+	"compressor/lib/vlc"
 	"errors"
-	"fmt"
 	"github.com/spf13/cobra"
 	"io"
 	"os"
@@ -44,24 +44,12 @@ func pack(_ *cobra.Command, args []string) {
 		if n == 0 {
 			break
 		}
-
-		//buffer[:n]
+		packed := vlc.Encode(string(buffer[:n]))
+		err = os.WriteFile(packedFileName(filePath), []byte(packed), 0644)
+		if err != nil {
+			panic("err while writing in file")
+		}
 	}
-
-	//data, err := io.ReadAll(r)
-	//if err != nil {
-	//	handleErr(err)
-	//}
-
-	//packed := Encode(data)
-	packed := "" + string(buffer) //TODO: remove
-	fmt.Println(packed)
-
-	err = os.WriteFile(packedFileName(filePath), []byte(packed), 0644)
-	if err != nil {
-		handleErr(err)
-	}
-
 }
 
 func packedFileName(path string) string {
