@@ -11,21 +11,29 @@ import (
 	"strings"
 )
 
+var packFlag bool
+var unpackFlag bool
+
 var vlcCmd = &cobra.Command{
 	Use:   "vlc",
 	Short: "Pack file using variable-length code",
-	Run:   pack,
+	Args:  cobra.MinimumNArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		if !packFlag && !unpackFlag {
+			handleErr(errors.New("at least one flag is required: -p to pack, -u to unpack"))
+		}
+
+		if packFlag {
+			pack(cmd, args)
+			return
+		}
+		unpack(cmd, args)
+	},
 }
 
 const packedExtension = "vlc"
 
-var ErrEmptyPath = errors.New("path to file is not specified")
-
 func pack(_ *cobra.Command, args []string) {
-	if len(args) == 0 || args[0] == "" {
-		handleErr(ErrEmptyPath)
-	}
-
 	filePath := args[0]
 
 	r, err := os.Open(filePath)
@@ -62,6 +70,11 @@ func packedFileName(path string) string {
 	return baseName + "." + packedExtension
 }
 
+func unpack(_ *cobra.Command, args []string) {
+
+}
+
 func init() {
-	packCmd.AddCommand(vlcCmd)
+	rootCmd.AddCommand(vlcCmd)
+	vlcCmd.Flags().BoolVarP(&packFlag, "pack", "p", false, "pack")
 }
