@@ -28,10 +28,12 @@ var unpackCmd = &cobra.Command{
 			unpackVlc(args[0])
 		} else if true { //todo for another algorithms
 
+		} else if true {
+
 		} else {
+			handleErr(errors.New("at least one algorithm must be specified using the flag, to unpack: (vlc)"))
 
 		}
-		handleErr(errors.New("at least one algorithm must be specified using the flag, to unpack: (vlc)"))
 	},
 }
 

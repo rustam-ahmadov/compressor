@@ -1,15 +1,12 @@
 package vlc
 
 import (
-	"fmt"
 	"strings"
 	"unicode"
 )
 
 func Encode(str string) string {
-	fmt.Println(str)
 	str = prepareText(str)
-	fmt.Println(str)
 	bStr := encodeBin(str)
 	binaryChunks := splitByChunks(bStr, chunksSize)
 	hexChunks := binaryChunks.ToHex()
@@ -26,7 +23,7 @@ func encodeBin(str string) string {
 }
 
 func bin(ch rune) string {
-	table := getEncodingTable()
+	table := GetEncodingTable()
 	res, ok := table[ch]
 	if !ok {
 		panic("unknown character: " + string(ch))
@@ -50,7 +47,7 @@ func prepareText(str string) string {
 	return buf.String()
 }
 
-func getEncodingTable() encodingTable {
+func GetEncodingTable() encodingTable {
 	return encodingTable{
 		' ': "11",
 		'e': "101",
@@ -88,13 +85,31 @@ func getEncodingTable() encodingTable {
 	}
 }
 
+func preparedTextToInitial(str string) string {
+	var buf strings.Builder
+	upper := false
+	for _, v := range str {
+		if v == '!' {
+			upper = true
+			continue
+		}
+		if upper {
+			buf.WriteRune(unicode.ToUpper(v))
+		} else {
+			buf.WriteRune(v)
+		}
+		upper = false
+	}
+	return buf.String()
+}
+
 func Decode(encodedText string) string {
 	hCks := NewHexChunks(encodedText)
 	bCks := hCks.ToBinary()
-	bCks.Join()
-	// BinaryChunks -> binaryString
-	// binaryString -> preparedText
-	// preparedText -> Text
-
-	return ""
+	bStr := bCks.Join()
+	var dt *DecodingTree
+	dt = dt.NewDecodingTree(GetEncodingTable())
+	preparedText := dt.PreparedText(bStr)
+	decodedText := preparedTextToInitial(preparedText)
+	return decodedText
 }

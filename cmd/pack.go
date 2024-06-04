@@ -26,10 +26,11 @@ var packCmd = &cobra.Command{
 			packVlc(args[0])
 		} else if true {
 
-		} else {
+		} else if true {
 
+		} else {
+			handleErr(errors.New("at least one algorithm must be specified using the flag, to pack: (vlc)"))
 		}
-		handleErr(errors.New("at least one algorithm must be specified using the flag, to pack: (vlc)"))
 	},
 }
 
