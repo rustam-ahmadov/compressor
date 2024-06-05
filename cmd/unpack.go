@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"bufio"
-	"compressor/lib/vlc"
-	"errors"
+	"compressor/lib/compression"
+	"compressor/lib/compression/vlc"
 	"github.com/spf13/cobra"
 	"io"
 	"os"
@@ -11,35 +11,24 @@ import (
 	"strings"
 )
 
-// TODO: real prev extension
-const unpackedExtension = "txt"
-
 var unpackCmd = &cobra.Command{
 	Use:   "unpack",
 	Short: "unpack file using specified algorithm",
-	Args:  cobra.MinimumNArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		vlcFlag, err := cmd.Flags().GetBool("vlc")
-		if err != nil {
-			handleErr(err)
-		}
-
-		if vlcFlag {
-			unpackVlc(args[0])
-		} else if true { //todo for another algorithms
-
-		} else if true {
-
-		} else {
-			handleErr(errors.New("at least one algorithm must be specified using the flag, to unpack: (vlc)"))
-
-		}
-	},
+	//Args:  cobra.MinimumArgs(1),
+	Run: unpack,
 }
 
-func unpackVlc(filePath string) {
+func unpack(cmd *cobra.Command, args []string) {
+	var decoder compression.Decoder
+	extension := ""
+	method := cmd.Flag("method").Value.String()
+	switch method {
+	case "vlc":
+		decoder = vlc.New()
+		extension = "txt"
+	}
 
-	r, err := os.Open(filePath)
+	r, err := os.Open(args[0])
 	if err != nil {
 		handleErr(err)
 	}
@@ -55,8 +44,8 @@ func unpackVlc(filePath string) {
 		if n == 0 {
 			break
 		}
-		packed := vlc.Decode(string(buffer[:n]))
-		err = os.WriteFile(unpackedFileName(filePath), []byte(packed), 0644)
+		packed := decoder.Decode(buffer[:n])
+		err = os.WriteFile(unpackedFileName(args[0], extension), []byte(packed), 0644)
 		if err != nil {
 			panic("err while writing in file")
 		}
@@ -64,17 +53,20 @@ func unpackVlc(filePath string) {
 }
 
 // TODO: refactor this
-func unpackedFileName(path string) string {
+func unpackedFileName(path string, extension string) string {
 	// /path/to/file/myFile.txt -> myFile.vlc
 
 	fileName := filepath.Base(path)               //myFile.txt
 	ext := filepath.Ext(fileName)                 //.txt
 	baseName := strings.TrimSuffix(fileName, ext) //myFile
 
-	return baseName + "." + unpackedExtension
+	return baseName + "." + extension
 }
 
 func init() {
 	rootCmd.AddCommand(unpackCmd)
-	unpackCmd.Flags().Bool("vlc", false, "Vlc algorithm")
+	unpackCmd.Flags().StringP("method", "m", "", "specify the algorithm to decode file: (vlc)")
+	if err := unpackCmd.MarkFlagRequired("method"); err != nil {
+		panic(err)
+	}
 }
