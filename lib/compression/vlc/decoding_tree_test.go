@@ -1,6 +1,7 @@
 package vlc
 
 import (
+	"compressor/lib/compression/vlc/table"
 	"reflect"
 	"testing"
 )
@@ -8,8 +9,8 @@ import (
 func TestDecodingTree_Add(t *testing.T) {
 	type fields struct {
 		Value string
-		Left  *DecodingTree
-		Right *DecodingTree
+		Left  *table.decodingTree
+		Right *table.decodingTree
 	}
 	type args struct {
 		code  string
@@ -27,8 +28,8 @@ func TestDecodingTree_Add(t *testing.T) {
 				value: ' ',
 			},
 			fields: fields{
-				Right: &DecodingTree{
-					Right: &DecodingTree{
+				Right: &table.decodingTree{
+					Right: &table.decodingTree{
 						Right: nil,
 						Left:  nil,
 						Value: " ",
@@ -38,16 +39,16 @@ func TestDecodingTree_Add(t *testing.T) {
 				Value: "",
 			},
 		},
-		// TODO: Add test cases.
+		// TODO: add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dt := &DecodingTree{
+			dt := &table.decodingTree{
 				Value: tt.fields.Value,
 				Left:  tt.fields.Left,
 				Right: tt.fields.Right,
 			}
-			dt.Add(tt.args.code, tt.args.value)
+			dt.add(tt.args.code, tt.args.value)
 		})
 	}
 }
@@ -55,27 +56,27 @@ func TestDecodingTree_Add(t *testing.T) {
 func Test_encodingTable_DecodingTree(t *testing.T) {
 	tests := []struct {
 		name string
-		et   encodingTable
-		want DecodingTree
+		et   table.EncodingTable
+		want table.decodingTree
 	}{
 		{
 			name: "base tree test",
-			et: encodingTable{
+			et: table.EncodingTable{
 				'a': "11",
 				'b': "1001",
 				'c': "0101",
 			},
-			want: DecodingTree{
-				Left: &DecodingTree{Right: &DecodingTree{Left: &DecodingTree{Right: &DecodingTree{Value: "c"}}}},
-				Right: &DecodingTree{Right: &DecodingTree{Value: "a"},
-					Left: &DecodingTree{Left: &DecodingTree{Right: &DecodingTree{Value: "b"}}}},
+			want: table.decodingTree{
+				Left: &table.decodingTree{Right: &table.decodingTree{Left: &table.decodingTree{Right: &table.decodingTree{Value: "c"}}}},
+				Right: &table.decodingTree{Right: &table.decodingTree{Value: "a"},
+					Left: &table.decodingTree{Left: &table.decodingTree{Right: &table.decodingTree{Value: "b"}}}},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.et.DecodingTree(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("DecodingTree() = %v, want %v", got, tt.want)
+				t.Errorf("decodingTree() = %v, want %v", got, tt.want)
 			}
 		})
 	}

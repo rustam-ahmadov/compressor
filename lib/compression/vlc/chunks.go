@@ -7,8 +7,6 @@ import (
 	"unicode/utf8"
 )
 
-type encodingTable map[rune]string
-
 const chunksSize = 8
 
 type BinaryChunks []BinaryChunk

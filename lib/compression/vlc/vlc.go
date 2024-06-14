@@ -1,6 +1,7 @@
 package vlc
 
 import (
+	"compressor/lib/compression/vlc/table"
 	"strings"
 	"unicode"
 )
@@ -58,8 +59,8 @@ func prepareText(str string) string {
 	return buf.String()
 }
 
-func getEncodingTable() encodingTable {
-	return encodingTable{
+func getEncodingTable() table.EncodingTable {
+	return table.EncodingTable{
 		' ': "11",
 		'e': "101",
 		't': "1001",
