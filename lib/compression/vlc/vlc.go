@@ -1,100 +1,101 @@
 package vlc
 
 import (
+	"bytes"
 	"compressor/lib/compression/vlc/table"
+	"encoding/binary"
+	"encoding/gob"
+	"log"
 	"strings"
 	"unicode"
 )
 
 type CompressorVLC struct {
+	tblGenerator table.Generator
 }
 
-func New() *CompressorVLC {
+func New(tblGenerator table.Generator) *CompressorVLC {
 	return &CompressorVLC{}
 }
 
-func (_ CompressorVLC) Encode(str string) []byte {
-	str = prepareText(str)
-	binaryChunks := splitByChunks(encodeBin(str), chunksSize)
-	return binaryChunks.Bytes()
+func (compressor CompressorVLC) Encode(str string) []byte {
+	tbl := compressor.tblGenerator.NewTable(str)
+	encoded := encodeBin(str, tbl)
+	return buildEncodedFile(tbl, encoded)
+}
+func (compressor CompressorVLC) Decode(encodedData []byte) string {
+	tbl, data := parseFile(encodedData)
+	return tbl.Decode(data)
 }
 
-func (_ CompressorVLC) Decode(encodedData []byte) string {
-	bString := NewBinChunks(encodedData).Join()
-	dt := getEncodingTable().DecodingTree()
-	return exportText(dt.Decode(bString))
+func buildEncodedFile(tbl table.EncodingTable, data string) []byte {
+	encodedTbl := encodeTable(tbl)
+
+	var buf bytes.Buffer
+	buf.Write(encodeInt(len(encodedTbl)))
+	buf.Write(encodeInt(len(data)))
+	buf.Write(encodedTbl)
+	buf.Write(splitByChunks(data, chunksSize).Bytes())
+	return buf.Bytes()
+}
+
+func encodeInt(num int) []byte {
+	res := make([]byte, 4)
+	binary.BigEndian.PutUint32(res, uint32(num))
+	return res
+}
+
+func encodeTable(tbl table.EncodingTable) []byte {
+	var tableBuf bytes.Buffer
+	if err := gob.NewEncoder(&tableBuf).Encode(tbl); err != nil {
+		log.Fatal("can't serialize the table")
+	}
+	return tableBuf.Bytes()
+}
+
+func parseFile(data []byte) (table.EncodingTable, string) {
+	const (
+		tableSizeBytesCount = 4
+		dataSizeBytesCount
+	)
+	tableSizeBinary, data := data[:tableSizeBytesCount], data[tableSizeBytesCount:]
+	dataSizeBinary, data := data[:dataSizeBytesCount], data[dataSizeBytesCount:]
+
+	tableSize := binary.BigEndian.Uint32(tableSizeBinary)
+	dataSize := binary.BigEndian.Uint32(dataSizeBinary)
+
+	tblBinary, data := data[:tableSize], data[tableSize:]
+
+	tbl := decodeTable(tblBinary)
+	body := NewBinChunks(data).Join()
+
+	return tbl, body[:dataSize]
+}
+
+func decodeTable(tblBinary []byte) table.EncodingTable {
+	var tbl table.EncodingTable
+	r := bytes.NewReader(tblBinary)
+	if err := gob.NewDecoder(r).Decode(&tbl); err != nil {
+		log.Fatal("can't decode table", err)
+	}
+	return tbl
 }
 
 // encodeBin encodes str into binary codes string without spaces.
-func encodeBin(str string) string {
+func encodeBin(str string, table table.EncodingTable) string {
 	var buf strings.Builder
 	for _, v := range str {
-		buf.WriteString(bin(v))
+		buf.WriteString(bin(v, table))
 	}
 	return buf.String()
 }
 
-func bin(ch rune) string {
-	table := getEncodingTable()
+func bin(ch rune, table table.EncodingTable) string {
 	res, ok := table[ch]
 	if !ok {
 		panic("unknown character: " + string(ch))
 	}
 	return res
-}
-
-// prepareText prepares text to be fit for encode:
-// changes upper case letters to: ! + lower case letter
-// i.g.: My name is Tes -> !my name is !ted
-func prepareText(str string) string {
-	var buf strings.Builder
-	for _, v := range str {
-		if unicode.IsUpper(v) {
-			buf.WriteRune('!')
-			buf.WriteRune(unicode.ToLower(v))
-			continue
-		}
-		buf.WriteRune(v)
-	}
-	return buf.String()
-}
-
-func getEncodingTable() table.EncodingTable {
-	return table.EncodingTable{
-		' ': "11",
-		'e': "101",
-		't': "1001",
-		'o': "10001",
-		'n': "10000",
-
-		'a': "011",
-		's': "0101",
-		'h': "0011",
-
-		'u': "00011",
-		'i': "01001",
-		'r': "01000",
-		'd': "00101",
-
-		'l': "001001",
-		'!': "001000",
-		'c': "000101",
-		'f': "000100",
-		'm': "000011",
-
-		'p': "0000101",
-		'g': "0000100",
-		'w': "0000011",
-		'b': "0000010",
-		'y': "0000001",
-
-		'v': "00000001",
-		'j': "000000001",
-		'k': "0000000001",
-		'x': "00000000001",
-		'q': "000000000001",
-		'z': "000000000000",
-	}
 }
 
 func exportText(str string) string {

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"compressor/lib/compression"
 	"compressor/lib/compression/vlc"
+	"compressor/lib/compression/vlc/table/shannon_fano"
 	"github.com/spf13/cobra"
 	"io"
 	"os"
@@ -24,7 +25,7 @@ func unpack(cmd *cobra.Command, args []string) {
 	method := cmd.Flag("method").Value.String()
 	switch method {
 	case "vlc":
-		decoder = vlc.New()
+		decoder = vlc.New(shannon_fano.NewGenerator())
 		extension = "txt"
 	}
 

@@ -1,7 +1,6 @@
 package table
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -15,6 +14,12 @@ type decodingTree struct {
 	Value string
 	Left  *decodingTree
 	Right *decodingTree
+}
+
+func (et EncodingTable) Decode(str string) string {
+	dt := et.decodingTree()
+
+	return dt.Decode(str)
 }
 
 func (et EncodingTable) decodingTree() decodingTree {
@@ -43,18 +48,7 @@ func (dt *decodingTree) add(code string, value rune) {
 	dt.Value = string(value)
 }
 
-func (dt *decodingTree) Print() {
-	if dt == nil {
-		return
-	}
-	if dt.Value != "" {
-		fmt.Println(dt.Value)
-	}
-	dt.Left.Print()
-	dt.Right.Print()
-}
-
-func (dt *decodingTree) Decode(str string) string {
+func (dt decodingTree) Decode(str string) string {
 	var buf strings.Builder
 	var res strings.Builder
 	for _, ch := range str {

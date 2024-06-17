@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"compressor/lib/compression"
 	"compressor/lib/compression/vlc"
+	"compressor/lib/compression/vlc/table/shannon_fano"
 	"github.com/spf13/cobra"
 	"io"
 	"os"
@@ -24,7 +25,7 @@ func pack(cmd *cobra.Command, args []string) {
 	extension := ""
 	switch method {
 	case "vlc":
-		encoder = vlc.New()
+		encoder = vlc.New(shannon_fano.NewGenerator())
 		extension = "vlc"
 	default:
 		cmd.PrintErr("unknown method")
