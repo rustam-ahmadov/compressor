@@ -1,10 +1,9 @@
 package cmd
 
 import (
-	"bufio"
 	"compressor/lib/compression"
-	"compressor/lib/compression/vlc"
-	"compressor/lib/compression/vlc/table/shannon_fano"
+	"compressor/lib/compression/table/shannon_fano"
+	"compressor/lib/compression/table/vlc"
 	"github.com/spf13/cobra"
 	"io"
 	"os"
@@ -21,15 +20,6 @@ var packCmd = &cobra.Command{
 
 func pack(cmd *cobra.Command, args []string) {
 	var encoder compression.Encoder
-	method := cmd.Flag("method").Value.String()
-	extension := ""
-	switch method {
-	case "vlc":
-		encoder = vlc.New(shannon_fano.NewGenerator())
-		extension = "vlc"
-	default:
-		cmd.PrintErr("unknown method")
-	}
 
 	r, err := os.Open(args[0])
 	if err != nil {
@@ -37,21 +27,29 @@ func pack(cmd *cobra.Command, args []string) {
 	}
 	defer r.Close()
 
-	reader := bufio.NewReader(r)
-	buffer := make([]byte, 1024) //1 kb buffer
-	for {
-		n, err := reader.Read(buffer)
-		if err != nil && err != io.EOF {
-			handleErr(err)
-		}
-		if n == 0 {
-			break
-		}
-		packed := encoder.Encode(string(buffer[:n]))
-		err = os.WriteFile(packedFileName(args[0], extension), packed, 0644)
-		if err != nil {
-			panic("err while writing in file")
-		}
+	data, err := io.ReadAll(r)
+	if err != nil {
+		panic("can't read all data")
+	}
+
+	strData := string(data)
+	method := cmd.Flag("method").Value.String()
+	extension := ""
+	switch method {
+	case "vlc":
+		encoder = vlc.New()
+		extension = "vlc"
+	case "fano":
+		encoder = shannon_fano.New(strData)
+		extension = "fano"
+	default:
+		cmd.PrintErr("unknown method")
+	}
+
+	packed := encoder.Encode(strData)
+	err = os.WriteFile(packedFileName(args[0], extension), packed, 0644)
+	if err != nil {
+		panic("err while writing in file")
 	}
 }
 
